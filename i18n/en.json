@@ -1,0 +1,10 @@
+{
+	"@metadata": {
+		"authors": []
+	},
+	"defaultlinks-description": "Allows articles to specify formatting of incoming links",
+	"duplicate-defaultlink": "[[Category:Pages with DEFAULTLINK conflicts]]",
+	"defaultlink-invalid-link": "Default link must contain a link to its page",
+	"defaultlink-disallowed-namespace": "DEFAULTLINK tags are not allowed in this namespace",
+	"defaultlink-target-page-invalid": "Invalid page title specified in a DEFAULTLINK tag"
+}

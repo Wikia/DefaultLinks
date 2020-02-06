@@ -1,0 +1,40 @@
+{
+	"name": "DefaultLinks",
+	"version": "1.2.1",
+	"author": [
+		"foxlit"
+	],
+	"descriptionmsg": "defaultlinks-description",
+	"license-name": "GPL-2.0-or-later",
+	"type": "parserhook",
+	"MessagesDirs": {
+		"DefaultLinks": [
+			"i18n"
+		]
+	},
+	"ExtensionMessagesFiles": {
+		"DefaultLinksMagic": "DefaultLinks.i18n.magic.php"
+	},
+	"AutoloadClasses": {
+		"FXDefaultLinks": "DefaultLinks.hooks.php"
+	},
+	"Hooks": {
+		"ParserFirstCallInit": [
+			"FXDefaultLinks::onParserFirstCallInit"
+		],
+		"ArticleDeleteComplete": [
+			"FXDefaultLinks::onArticleDeleteComplete"
+		],
+		"LinksUpdateConstructed": [
+			"FXDefaultLinks::onLinksUpdateConstructed"
+		]
+	},
+	"config": {
+		"PagePropLinkInvalidations": {
+			"defaultlink": "pagelinks",
+			"defaultlinksec": "pagelinks"
+		},
+		"DFEnabledNamespaces": []
+	},
+	"manifest_version": 1
+}
