@@ -1,33 +1,23 @@
 {
 	"name": "DefaultLinks",
-	"version": "1.2.1",
-	"author": [
-		"foxlit"
-	],
+	"version": "1.3.0",
+	"author": ["foxlit"],
 	"descriptionmsg": "defaultlinks-description",
 	"license-name": "GPL-2.0-or-later",
 	"type": "parserhook",
 	"MessagesDirs": {
-		"DefaultLinks": [
-			"i18n"
-		]
+		"DefaultLinks": ["i18n"]
 	},
 	"ExtensionMessagesFiles": {
 		"DefaultLinksMagic": "DefaultLinks.i18n.magic.php"
 	},
-	"AutoloadClasses": {
-		"FXDefaultLinks": "DefaultLinks.hooks.php"
+	"AutoloadNamespaces": {
+		"DefaultLinks\\": "src"
 	},
 	"Hooks": {
-		"ParserFirstCallInit": [
-			"FXDefaultLinks::onParserFirstCallInit"
-		],
-		"ArticleDeleteComplete": [
-			"FXDefaultLinks::onArticleDeleteComplete"
-		],
-		"LinksUpdateConstructed": [
-			"FXDefaultLinks::onLinksUpdateConstructed"
-		]
+		"ParserFirstCallInit": "DefaultLinks\\Hooks::onParserFirstCallInit",
+		"PageDeleteComplete": "DefaultLinks\\Hooks::onPageDeleteComplete",
+		"LinksUpdateConstructed": "DefaultLinks\\Hooks::onLinksUpdateConstructed"
 	},
 	"config": {
 		"PagePropLinkInvalidations": {
