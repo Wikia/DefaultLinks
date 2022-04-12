@@ -4,6 +4,7 @@ namespace DefaultLinks;
 
 use LinksUpdate;
 use MagicWord;
+use MediaWiki\Linker\LinkTarget;
 use MediaWiki\MediaWikiServices;
 use Parser;
 use Title;
@@ -46,7 +47,7 @@ class Hooks {
 	/* Returns whether the article is in a namespace that is allowed to define
 	 * incoming link formatting.
 	 */
-	private static function nsHasFormattedLinks( Title $title ) {
+	private static function nsHasFormattedLinks( LinkTarget $title ) {
 		global $wgDFEnabledNamespaces;
 
 		return in_array( $title->getNamespace(), $wgDFEnabledNamespaces );
@@ -74,11 +75,16 @@ class Hooks {
 		return true;
 	}
 
-	/* Replaces default links with their expansions as necessary.
+	/**
+	 * Replaces default links with their expansions as necessary.
+	 * @param Parser $parser
+	 * @param $text
+	 * @param $stripState
+	 * @return bool
 	 */
 	public function onInternalParseBeforeSanitize( &$parser, &$text, &$stripState ) {
-		$this_page_name = $parser->getTitle()->getPrefixedText();
-		$this_page_id = $parser->getTitle()->getArticleID();
+		$this_page_name = $parser->getPage()->getPrefixedText();
+		$this_page_id = $parser->getPage()->getArticleID();
 		$this_page_link = $parser->getOutput()->getProperty( 'defaultlink' );
 		$this_page_slinks = $parser->getOutput()->getProperty( 'defaultlinksec' );
 
@@ -192,10 +198,16 @@ class Hooks {
 			}
 			$text2 = preg_replace( $find, $replace, $text );
 			$size = strlen( $text2 ) - strlen( $text );
-			if ( $size > 0 && !$parser->incrementIncludeSize( 'post-expand', $size ) ) {
-				$parser->limitationWarn( 'post-expand-template-inclusion' );
+			if ( $size > 0 ) {
+				// `incrementIncludeSize` from parser became private, but `mIncludeSizes` is
+				// still available as public, therefore let's copy method logic as "temporary" fix
+				if ( $parser->mIncludeSizes['post-expand'] + $size > $parser->getOptions()->getMaxIncludeSize() ) {
+					$parser->limitationWarn( 'post-expand-template-inclusion' );
 
-				return true;
+					return true;
+				} else {
+					$parser->mIncludeSizes['post-expand'] += $size;
+				}
 			}
 			$text = $text2;
 		}
@@ -203,10 +215,15 @@ class Hooks {
 		return true;
 	}
 
-	/* Captures use of the {{DEFAULTLINK:link|for page|silent}} magic word on the page.
+	/**
+	 * Captures use of the {{DEFAULTLINK:link|for page|silent}} magic word on the page.
+	 * @param Parser $parser
+	 * @param $frame
+	 * @param $args
+	 * @return string
 	 */
 	public function linkParserFunction( &$parser, $frame, $args ) {
-		$title = $parser->getTitle();
+		$title = $parser->getPage();
 		$silent =
 			isset( $args[2] ) &&
 			self::getMagicWord( 'silent' )->match( $frame->expand( $args[2] ) );
@@ -303,7 +320,12 @@ class Hooks {
 		return $ret;
 	}
 
-	/* Block default links on the entire page using a magic word.
+	/**
+	 * Block default links on the entire page using a magic word.
+	 * @param Parser $parser
+	 * @param $text
+	 * @param $stripState
+	 * @return bool
 	 */
 	public function onParserBeforeInternalParse( &$parser, &$text, &$stripState ) {
 		$pure = preg_replace( '#<nowiki>.*?</nowiki>#i', '', $text );
