@@ -1,0 +1,109 @@
+!! options
+version=2
+!! end
+
+!! article
+Template:DefaultLinksWrapper
+!! text
+{{DEFAULTLINK:<span class="example-wrapper">[[File:Foobar.jpg|link={{{name}}}]]</span>|{{{name}}}}}
+{{DEFAULTLINK:<span class="section-link">Link to test section: [[{{{name}}}#Test]]</span>|{{{name}}}#Test}}
+!! endarticle
+
+!! article
+Page with default link format
+!! text
+{{DefaultLinksWrapper|name={{PAGENAME}}}}
+!! endarticle
+
+!! article
+Default link security test
+!! text
+{{DEFAULTLINK:<script>alert('xss');</script>[[Default link security test]]|{{PAGENAME}}}}
+!! endarticle
+
+!! article
+Default link security test 2
+!! text
+{{DEFAULTLINK:[[Default link security test 2]]<script|{{PAGENAME}}}}
+!! endarticle
+
+!! article
+Default link security test 3
+!! text
+{{DEFAULTLINK:>alert('xss');</script>[[Default link security test 3]]|{{PAGENAME}}}}
+!! endarticle
+
+!! test
+Default link format applied via template
+!! wikitext
+[[Page with default link format]]
+[[Page with default link format#Test]]
+!! html
+<p><span class="example-wrapper"><a href="/wiki/Page_with_default_link_format" title="Page with default link format"><img alt="Foobar.jpg" src="http://example.com/images/3/3a/Foobar.jpg" decoding="async" width="1941" height="220" /></a></span>
+<span class="section-link">Link to test section: <a href="/wiki/Page_with_default_link_format#Test" title="Page with default link format">Page with default link format#Test</a></span>
+</p>
+!! end
+
+!! test
+Default link format with unsafe input
+!! wikitext
+[[Default link security test]]
+!! html
+<p>&lt;script&gt;alert('xss');&lt;/script&gt;<a href="/wiki/Default_link_security_test" title="Default link security test">Default link security test</a>
+</p>
+!! end
+
+!! test
+Default link format with unsafe concatenated input
+!! wikitext
+[[Default link security test 2]][[Default link security test 3]]
+!! html
+<p><a href="/wiki/Default_link_security_test_2" title="Default link security test 2">Default link security test 2</a>&lt;script&gt;alert('xss');&lt;/script&gt;<a href="/wiki/Default_link_security_test_3" title="Default link security test 3">Default link security test 3</a>
+</p>
+!! end
+
+!! test
+Avoiding default link formatting
+!! wikitext
+[[Page with default link format|This link]] has a caption
+[[:Page with default link format]] has a namespace delimiter
+[[Page with default link format]]s has appended text
+!! html
+<p><a href="/wiki/Page_with_default_link_format" title="Page with default link format">This link</a> has a caption
+<a href="/wiki/Page_with_default_link_format" title="Page with default link format">Page with default link format</a> has a namespace delimiter
+<a href="/wiki/Page_with_default_link_format" title="Page with default link format">Page with default link formats</a> has appended text
+</p>
+!! end
+
+!! test
+__NODEFAULTLINKS__
+!! wikitext
+__NODEFAULTLINKS__
+[[Page with default link format]]
+!! html
+<p><a href="/wiki/Page_with_default_link_format" title="Page with default link format">Page with default link format</a>
+</p>
+!! end
+
+!! test
+<nodefaultlinks>
+!! wikitext
+[[Page with default link format]]
+<nodefaultlinks>
+[[Page with default link format]]
+</nodefaultlinks>
+!! html
+<p><span class="example-wrapper"><a href="/wiki/Page_with_default_link_format" title="Page with default link format"><img alt="Foobar.jpg" src="http://example.com/images/3/3a/Foobar.jpg" decoding="async" width="1941" height="220" /></a></span>
+</p><p><a href="/wiki/Page_with_default_link_format" title="Page with default link format">Page with default link format</a>
+</p>
+!! end
+
+!! test
+Default link format for self links
+!! wikitext
+{{DEFAULTLINK:<span style="color:blue">[[{{PAGENAME}}]]</span>|{{PAGENAME}}|}}
+[[{{PAGENAME}}]]
+!! html
+<p><span style="color:blue"><a class="mw-selflink selflink">Parser test</a></span>
+</p>
+!! end
