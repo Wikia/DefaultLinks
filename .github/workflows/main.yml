@@ -1,0 +1,77 @@
+name: PHPUnit / PHPCS / Phan
+on:
+  pull_request:
+    branches: '**'
+
+  push:
+    branches: [ master, REL1_39 ]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        php_version: ['8.0']
+        mw: ['REL1_39']
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php_version }}
+          # We don't run any coverage, so we should set this parameter to none
+          # as this will disable xdebug which slows all processes significantly
+          coverage: none
+          extensions: ast
+      - uses: actions/checkout@v3
+
+      - name: Checkout Mediawiki
+        uses: actions/checkout@v3
+        with:
+          repository: wikimedia/mediawiki
+          ref: ${{ matrix.mw }}
+
+      - name: Checkout DefaultLinks extension
+        uses: actions/checkout@v3
+        with:
+          path: extensions/DefaultLinks
+
+      - name: Cache DefaultLinks composer dependencies
+        id: composer-cache
+        uses: actions/cache@v3
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php-v3-${{ hashFiles('extensions/DefaultLinks/composer.lock') }}
+
+      - name: Install DefaultLinks composer dependencies
+        working-directory: ./extensions/DefaultLinks
+        run: composer install --prefer-dist --no-progress
+
+      - name: Run PHPCS and minus-x
+        working-directory: ./extensions/DefaultLinks
+        run: composer test
+
+      - name: Run Phan static analysis
+        working-directory: ./extensions/DefaultLinks
+        run: composer phan
+
+      - name: Start MySQL
+        run: sudo systemctl start mysql.service
+
+      - name: Install MediaWiki composer dependencies
+        run: composer update --prefer-dist --no-progress
+
+      - name: Install & configure MediaWiki
+        run: |
+          php maintenance/install.php --dbtype mysql --dbuser root --dbpass root --pass TestPassword testwiki TestAdmin
+
+          echo 'error_reporting( E_ALL | E_STRICT );' >> LocalSettings.php
+          echo 'ini_set( "display_errors", 1 );' >> LocalSettings.php
+          echo '$wgShowExceptionDetails = true;' >> LocalSettings.php
+          echo '$wgShowDBErrorBacktrace = true;' >> LocalSettings.php
+          echo '$wgDevelopmentWarnings = true;' >> LocalSettings.php
+
+          echo 'wfLoadExtension( "'DefaultLinks'" );' >> LocalSettings.php
+
+      - name: Run parser tests
+        run: php tests/parser/parserTests.php --file extensions/DefaultLinks/tests/parser/parserTests.txt
