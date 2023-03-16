@@ -120,7 +120,7 @@ class Hooks implements
 
 		$page = $parser->getPage();
 		$this_page_name = $page !== null ? $this->titleFormatter->getPrefixedText( $page ) : '';
-		$this_page_id = $page instanceof PageIdentity ? $page->getId() : 0;
+		$this_page_id = $page instanceof PageIdentity && $page->canExist() ? $page->getId() : 0;
 		$this_page_link = $parser->getOutput()->getPageProperty( 'defaultlink' );
 		$this_page_slinks = $parser->getOutput()->getExtensionData( 'defaultlinksec' ) ?? [];
 
