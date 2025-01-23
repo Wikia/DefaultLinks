@@ -2,9 +2,9 @@
 
 namespace DefaultLinks;
 
-use Config;
 use DeferrableUpdate;
 use MagicWordFactory;
+use Mediawiki\Config\Config;
 use MediaWiki\Hook\InternalParseBeforeLinksHook;
 use MediaWiki\Hook\ParserBeforeInternalParseHook;
 use MediaWiki\Hook\ParserFirstCallInitHook;
@@ -43,7 +43,6 @@ class Hooks implements
 
 	/**
 	 * Recursion guard used while sanitizing default link format values.
-	 * @var bool
 	 */
 	private bool $recursionGuard = false;
 
@@ -72,8 +71,6 @@ class Hooks implements
 	/**
 	 * Returns whether the article is in a namespace that is allowed to define
 	 * incoming link formatting.
-	 * @param PageReference $title
-	 * @return bool
 	 */
 	private function nsHasFormattedLinks( PageReference $title ): bool {
 		// It's not possible to inject configuration overrides into parser tests in time for
@@ -109,7 +106,6 @@ class Hooks implements
 	 * @param Parser $parser
 	 * @param string &$text
 	 * @param StripState $stripState
-	 * @return bool
 	 */
 	public function onInternalParseBeforeLinks( $parser, &$text, $stripState ): bool {
 		// Avoid infinite recursion if called from within recursiveTagParse()
@@ -273,10 +269,6 @@ class Hooks implements
 
 	/**
 	 * Captures use of the {{DEFAULTLINK:link|for page|silent}} magic word on the page.
-	 * @param Parser $parser
-	 * @param PPFrame $frame
-	 * @param array $args
-	 * @return string
 	 */
 	public function linkParserFunction( Parser $parser, PPFrame $frame, array $args ): string {
 		$title = $parser->getPage();
@@ -365,13 +357,6 @@ class Hooks implements
 
 	/**
 	 * Tag hook: disable default link functionality within
-	 *
-	 * @param string $text
-	 * @param array $args
-	 * @param Parser $parser
-	 * @param PPFrame $frame
-	 *
-	 * @return string
 	 */
 	public function noLinksTag( string $text, array $args, Parser $parser, PPFrame $frame ): string {
 		$oldSup = $this->suppressedOptions;
@@ -387,7 +372,6 @@ class Hooks implements
 	 * @param Parser $parser
 	 * @param string &$text
 	 * @param StripState $stripState
-	 * @return bool
 	 */
 	public function onParserBeforeInternalParse( $parser, &$text, $stripState ): bool {
 		$pure = preg_replace( '#<nowiki>.*?</nowiki>#i', '', $text );
