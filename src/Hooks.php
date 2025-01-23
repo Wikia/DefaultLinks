@@ -10,15 +10,15 @@ use MediaWiki\Hook\ParserBeforeInternalParseHook;
 use MediaWiki\Hook\ParserFirstCallInitHook;
 use MediaWiki\Page\PageIdentity;
 use MediaWiki\Page\PageReference;
+use MediaWiki\Parser\Parser;
+use MediaWiki\Parser\ParserOptions;
+use MediaWiki\Parser\PPFrame;
+use MediaWiki\Parser\StripState;
 use MediaWiki\Revision\RenderedRevision;
 use MediaWiki\Storage\Hook\RevisionDataUpdatesHook;
-use Parser;
-use ParserOptions;
-use PPFrame;
+use MediaWiki\Title\Title;
+use MediaWiki\Title\TitleFormatter;
 use ReflectionProperty;
-use StripState;
-use Title;
-use TitleFormatter;
 use Wikimedia\Rdbms\ILoadBalancer;
 
 /**
@@ -34,12 +34,12 @@ class Hooks implements
 	 * Page ID/Title or 'Page ID#fragment' => link text (retrieval cache)
 	 * @var string[]|false[]
 	 */
-	private $knownFormatting = [];
+	private array $knownFormatting = [];
 	/**
 	 * ParserOptions objects for which default links are disabled
 	 * @var ParserOptions[]
 	 */
-	private $supressedOptions = [];
+	private array $suppressedOptions = [];
 
 	/**
 	 * Recursion guard used while sanitizing default link format values.
@@ -48,10 +48,10 @@ class Hooks implements
 	private bool $recursionGuard = false;
 
 	public function __construct(
-		private Config $config,
-		private ILoadBalancer $dbLoadBalancer,
-		private TitleFormatter $titleFormatter,
-		private MagicWordFactory $magicWordFactory
+		private readonly Config $config,
+		private readonly ILoadBalancer $dbLoadBalancer,
+		private readonly TitleFormatter $titleFormatter,
+		private readonly MagicWordFactory $magicWordFactory
 	) {
 	}
 
@@ -75,7 +75,7 @@ class Hooks implements
 	 * @param PageReference $title
 	 * @return bool
 	 */
-	private function nsHasFormattedLinks( PageReference $title ) {
+	private function nsHasFormattedLinks( PageReference $title ): bool {
 		// It's not possible to inject configuration overrides into parser tests in time for
 		// article fixture initialization, so hardcode the allowed set of namespaces there.
 		if ( defined( 'MW_PARSER_TEST' ) ) {
@@ -125,10 +125,10 @@ class Hooks implements
 		$this_page_slinks = $parser->getOutput()->getExtensionData( 'defaultlinksec' ) ?? [];
 
 		if ( $this->magicWordFactory->get( 'nodefaultlink' )->matchAndRemove( $text ) ) {
-			$this->supressedOptions[] = $parser->getOptions();
+			$this->suppressedOptions[] = $parser->getOptions();
 
 			return true;
-		} elseif ( in_array( $parser->getOptions(), $this->supressedOptions ) ) {
+		} elseif ( in_array( $parser->getOptions(), $this->suppressedOptions ) ) {
 			return true;
 		}
 
@@ -144,7 +144,7 @@ class Hooks implements
 			if ( isset( $lock[$whole] ) ) {
 				continue;
 			}
-			if ( strpos( $target, '%' ) !== false ) {
+			if ( str_contains( $target, '%' ) ) {
 				$target = str_replace( [ '<', '>' ], [ '&lt;', '&gt;' ], urldecode( $target ) );
 			}
 			$lock[$whole] = true;
@@ -278,7 +278,7 @@ class Hooks implements
 	 * @param array $args
 	 * @return string
 	 */
-	public function linkParserFunction( Parser $parser, PPFrame $frame, array $args ) {
+	public function linkParserFunction( Parser $parser, PPFrame $frame, array $args ): string {
 		$title = $parser->getPage();
 		$silent =
 			isset( $args[2] ) &&
@@ -291,7 +291,7 @@ class Hooks implements
 		$thisTitle = $title !== null ? $this->titleFormatter->getPrefixedText( $title ) : '';
 		$forPage = isset( $args[1] ) ? trim( $frame->expand( $args[1] ) ) : '';
 		$fragment = '';
-		if ( strpos( $forPage, '%' ) !== false ) {
+		if ( str_contains( $forPage, '%' ) ) {
 			$forPage = str_replace( [ '<', '>' ], [ '&lt;', '&gt;' ], urldecode( $forPage ) );
 		}
 
@@ -365,17 +365,19 @@ class Hooks implements
 
 	/**
 	 * Tag hook: disable default link functionality within
+	 *
 	 * @param string $text
 	 * @param array $args
 	 * @param Parser $parser
 	 * @param PPFrame $frame
+	 *
 	 * @return string
 	 */
-	public function noLinksTag( $text, $args, Parser $parser, PPFrame $frame ) {
-		$oldSup = $this->supressedOptions;
-		$this->supressedOptions[] = $parser->getOptions();
+	public function noLinksTag( string $text, array $args, Parser $parser, PPFrame $frame ): string {
+		$oldSup = $this->suppressedOptions;
+		$this->suppressedOptions[] = $parser->getOptions();
 		$ret = $parser->recursiveTagParse( $text, $frame );
-		$this->supressedOptions = $oldSup;
+		$this->suppressedOptions = $oldSup;
 
 		return $ret;
 	}
@@ -387,10 +389,10 @@ class Hooks implements
 	 * @param StripState $stripState
 	 * @return bool
 	 */
-	public function onParserBeforeInternalParse( $parser, &$text, $stripState ) {
+	public function onParserBeforeInternalParse( $parser, &$text, $stripState ): bool {
 		$pure = preg_replace( '#<nowiki>.*?</nowiki>#i', '', $text );
 		if ( $this->magicWordFactory->get( 'nodefaultlink' )->match( $pure ) ) {
-			$this->supressedOptions[] = $parser->getOptions();
+			$this->suppressedOptions[] = $parser->getOptions();
 		}
 
 		return true;
