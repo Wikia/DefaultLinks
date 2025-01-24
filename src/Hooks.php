@@ -2,14 +2,14 @@
 
 namespace DefaultLinks;
 
-use DeferrableUpdate;
-use MagicWordFactory;
 use Mediawiki\Config\Config;
+use MediaWiki\Deferred\DeferrableUpdate;
 use MediaWiki\Hook\InternalParseBeforeLinksHook;
 use MediaWiki\Hook\ParserBeforeInternalParseHook;
 use MediaWiki\Hook\ParserFirstCallInitHook;
 use MediaWiki\Page\PageIdentity;
 use MediaWiki\Page\PageReference;
+use MediaWiki\Parser\MagicWordFactory;
 use MediaWiki\Parser\Parser;
 use MediaWiki\Parser\ParserOptions;
 use MediaWiki\Parser\PPFrame;
